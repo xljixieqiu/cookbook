@@ -1,3 +1,4 @@
+#字典中的键映射多个值
 from collections import defaultdict
 d=defaultdict(list)
 d['a'].append(1)
@@ -26,7 +27,7 @@ dl=defaultdict(list)
 ds=defaultdict(set)
 for key,value in pairs:
     dl[key].append(value)
-print('dl:',dl)
+print('dl:',dl)#'b':[4,4]
 for key,value in pairs:
     ds[key].add(value)
-print('ds:',ds)
+print('ds:',ds)#'b':{4}
