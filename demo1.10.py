@@ -15,5 +15,6 @@ def dedupe2(items, key=None):
             seen.add(val)
 a=[1,5,2,4,1,9,5,6,4,5]
 b=[{'x':1,'y':2},{'x':1,'y':3},{'x':1,'y':2},{'x':2,'y':4}]#a、b均为list
-print(list(dedupe1(a)))
+print(dedupe1(1))#output a dedupe1 object一个dedupe1的对象
+print(list(dedupe1(a)))#
 print(list(dedupe2(b,key=lambda d:(d['x'],d['y']))))
