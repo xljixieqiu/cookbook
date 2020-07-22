@@ -12,6 +12,7 @@ rows = [
 from operator import itemgetter
 from itertools import groupby
 from collections import defaultdict
+#如果相邻几个dict的key值相同，groupby时则把这几个dict搞成一个——grouper对象
 print(list(groupby(rows,key=itemgetter('date'))))#output a itertools.groupby object.[(key,_grouper),(key,_grouper)...]的序列_grouper即rows中的每个字典
 #未排序前
 print('未排序前-----------------')
