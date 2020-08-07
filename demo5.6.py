@@ -3,11 +3,12 @@
 import io
 s=io.StringIO()
 s.write('hello world\n')
-print('this is a test',file=s)
-print(s.getvalue())
+print('-'*100)
+print('this is a test',file=s)#output hello world
+print(s.getvalue())#output this is a test
 t=io.StringIO('hello\nworld\n')
-print(t.read(4))
-print(t.read())
+print(t.read(4))#前4个
+print(t.read())#读取剩下的全部
 #io.StringIO只能用于文本。如果要操作二进制数据，要使用io.BytesIO
 b=io.BytesIO()
 b.write(b'binary data')
