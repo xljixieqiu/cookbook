@@ -3,7 +3,7 @@
 #你需要将一个python对象序列化为一个字节流，以便他保存到一个文件、储存到数据库或者通过网络传输它
 #解决
 #对于序列化最普遍的做法就是使用pickle模块。为了将一个对象保存到一个文件中，可以这样做
-import pickle,math,time,threading,countdown
+import pickle,math,time,threading
 '''
 data=...#some python object
 f=open('somefile','wb')
@@ -32,7 +32,7 @@ print(pickle.load(f))
 print(pickle.load(f))
 f.close()
 #你还能序列化函数，类，还有接口，但是结果数据仅仅将他们的名称编码成对应的代码对象。例如：
-print(pickle.dump(math.cos))
+print(pickle.dumps(math.cos))
 #当数据反序列化回来的时候，会先假定所有的源数据是可用的。模块，类和函数会自动按需导入进来。
 #对于python数据被不同机器上的解析器所共享的应用程序而言，数据的保存可能会有问题，因为所有的机器都必须访问同一个源代码。
 #注
@@ -61,14 +61,25 @@ class Countdown:
     def __getstate__(self):
         return self.n
     def __setstate__(self,n):
-        self._init__(n)
+        self.__init__(n)
 #试着运行下面的序列化试验代码：
-c=countdown.Countdown(30)
-T-minus 30
+c=Countdown(30)
+#T-minus 30
 #after a few moments
+time.sleep(16)
+print('sleep 16 secends')
 f=open('cstate.p','wb')
 pickle.dump(c,f)
+print('将c写入cstate.p')
 f.close()
+print('关闭cstate.p')
+print('load cstate.p')
+f=open('cstate.p','rb')
+pickle.load(f)#从刚刚dump(c,f)的节点开始继续执行，也就是T-minus 26
+f.close()
+print('再延时9秒')
+time.sleep(9)
+
 #你可以看到线程又奇迹般的重生了，从你第一次序列化它的地方又恢复过来。
 #pickle 对于大型的数据结构比如使用 array 或 numpy 模块创建的二进制数组效率并不是一个高效的编码方式。
 #如果你需要移动大量的数组数据，你最好是先在一个文件中将其保存为数组数据块或使用更高级的标准编码方式如HDF5 (需要第三方库的支持)。
