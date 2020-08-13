@@ -31,10 +31,10 @@ r=ResultHandler()
 apply_async(add,(2,3),callback=r.handler)
 apply_async(add,('hello','world'),callback=r.handler)
 #第二种方式，作为类的替代，可以使用一个闭包捕获状态值，例如：
-def make_handler():
+def make_handler():#闭包
     sequence=0
     def handler(result):
-        nonlocal sequence
+        nonlocal sequence#nonlocal作用是把变量标记为自由变量。
         sequence+=1
         print('[{}]Got:{}'.format(sequence,result))
     return handler
@@ -42,7 +42,7 @@ def make_handler():
 handler=make_handler()
 apply_async(add,(2,3),callback=handler)
 apply_async(add,('hello','world'),callback=handler)
-#还有另外一个更高级的方法，可以使用携程来完成童谣的事情
+#还有另外一个更高级的方法，可以使用协程来完成童谣的事情
 def make_handler1():
     sequence=0
     while True:
@@ -71,3 +71,132 @@ apply_async(add,('hello','world'),callback=handler.send)
 
 #如果你仅仅只需要给回调函数传递额外的值的话，还有一种使用 partial() 的方式也很有用。 在没有使用 partial() 的时候，你可能经常看到下面这种使用lambda表达式的复杂代码：
 apply_async(add,(2,3),callback=lambda r:handler(r,seq))
+
+#闭包说明---------------------------------------------------------------------------------------------------------------
+'''
+1.闭包是指延伸了作用域 的函数。其中包含函数定义体中引用、但是不在定义体中定义的非全局变量
+2.创建一个闭包必须满足一下几点：
+     一.必须有一个内嵌函数
+     二.内嵌函数必须引用外部函数中的变量
+     三.外部函数的返回值必须是内嵌函数
+3.闭包是一种函数，他会保留定义函数时存在的自有变量的绑定，这样调用函数时虽然定义作用域不可用了，但人能使用那些绑定。
+示例：实现一个计算移动平均功能的代码。
+'''
+#初学者可能会用类来实现，如下
+#示例1
+class Averager(object):
+    def __init__(self):
+        self.series=[]
+    def __call__(self,new_value):
+        self.series.append(new_value)
+        total=sum(self.series)
+        return total/len(self.series)
+avg=Averager()
+print(avg(10))#10
+print(avg(11))#10.5
+print(avg(12))#11
+#下面使用函数式实现：
+#示例2
+def make_averager():
+    series=[]
+    def averager(new_value):
+        series.append(new_value)
+        total=sum(series)
+        return total/len(series)
+    return averager
+#调用make_averager时，返回一个averager函数对象。
+#每次调用averager时，该对象会把参数添加到series中，然后计算当前平均值，如下所示：
+avg=make_averager()
+print(avg(10))#10
+print(avg(11))#10.5
+print(avg(12))#11
+
+#注释
+
+#在示例2中，series是make_averager函数的局部变量，因为那个函数的定义中初始化了series=[].
+#可是，调用avg(10)时，make_averager函数已经返回，而他的本地作用域也一去不复返了。
+#在averager函数中，series是自由变量，指未在本地作用域中绑定的变量，图形化展示如下：
+'''
+   def make_averager():
+       series=[]                         |这部分为闭包
+       def averager(new_value):          |
+自由变量<--series.append(new_value)      |
+           total=sum(series)             |
+           return total/len(series)      |
+       return averager
+'''
+#averager的闭包延伸到那个函数的作用域之外，包含对自由变量series的绑定
+
+#闭包的一些属性（关于数据存储位置）
+
+#我们可以审查返回的averager对象，发现python在__code__属性中保存局部变量和自由变量的名称
+'''
+# 审查make_averager创建的函数
+>>> avg.__code__.co_varnames
+('new_value', 'total')
+>>> avg.__code__.co_freevars
+('series',)
+'''
+#series绑定在返回的avg函数的__closure__属性中。avg.__closure__中各个元素对应于avg.__code__.co_freevars中的一个名称。
+#这些元素是cell对象，有个cell_content属性，保存着真正的值。这些属性的值如示例所示：
+'''
+>>> avg.__code__.co_freevars
+('series',)
+>>> avg.__closure__
+(<cell at 0x108b89828: list object at 0x108ae96c8>,)
+>>> avg.__closure__[0].cell_contents
+[10,11,12]
+'''
+#综上，闭包是一种函数，它会保留定义函数时存在的自由变量的绑定，这样调用函数时虽然定义作用域不可用了，但仍能使用那些绑定。
+
+
+#nonlocal（把变量标记为自由变量）--------------------------------------------------------------------------------------------------------
+
+#示例2的计算移动平均的方法效率并不高。原因是我们存储了所有的历史数据在列表中，然后每次调用averager时使用sum求和
+#要实现相同的功能，更好的实现方法是只储存当前的总值和元素个数，使用这两个值计算移动平均值即可：
+#直观来思考，我们可以对代码进行如下改进（注意：代码有缺陷！）
+'''
+def make_averager(): 
+    count = 0
+    total = 0
+    def averager(new_value): 
+        count += 1
+        total += new_value 
+        return total / count
+    return averager
+'''
+#尝试使用该函数，会得到如下的结果：
+'''
+>>> avg = make_averager()
+>>> avg(10)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "<stdin>", line 5, in averager
+UnboundLocalError: local variable 'count' referenced before assignment
+'''
+#提示错误为变量count在赋值前进行了引用，实际上，total也存在相同的问题。
+#接下来进一步解释，首先我们需要明白一个前提，在python中，对于一个不可变数据类型比如上述实例中count，count+=1和count=count+1是等效的。
+#因此，我们在averager的定义体中为count赋值了，这会把count变成局部变量，total变量也受这个问题影响。
+
+#示例2没遇到这个问题，因为我们没有给series赋值，我们只是调用series.append，并把他传给sum和len。也就是说，我们利用了列表是可变对象这一事实。
+
+#但对数字，字符串，元组等不可变类型来说，只能读取，不能更新。如果尝试重新绑定，例如count+=1,其实会隐式创建局部变量count。
+#这样count就不是自由变量了，因此不会保存在闭包中。
+
+#为了解决这个问题，python3引入了nonlocal声明。他的作用是把变量标记为自有变量，即使在函数中为变量赋予新值了，也会变成自由变量。
+#如果为nonlocal声明的变量赋予新值，闭包中保存的绑定会更新。新版的make_averager的正确实现如下
+#示例3
+def make_averager1():
+    count=0
+    total=0
+    def averager(new_value):
+        nonlocal count,total
+        count +=1
+        total +=new_value
+        return total/count
+    return averager
+
+
+
+#协程----
+#nothing
