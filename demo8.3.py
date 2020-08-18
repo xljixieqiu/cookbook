@@ -15,7 +15,10 @@ class LazyConnecttion:
 	def __enter__(self):
 		if self.sock is not None:
 			raise RuntimeError('Already connected')
+		#socket.socket(family=AF_INET,type=SOCK_STREAM,proto=0,fileno=None)
 		self.sock =socket(self.family,self.type)
+		#对于family=AF_INET，是一个(address,port)二元组传递给socket.connect()方法
+		#对于family=AF_INET6，是一个(address,port,flow info,scope id)四元组传递给connect()
 		self.sock.connect(self.address)
 		return self.sock
 	def __exit__(self,exc_ty,exc_val,tb):
@@ -27,9 +30,11 @@ conn=LazyConnecttion(('www.python.org',80))
 #connection closed
 with conn as s:
 	#conn.__enter__() executes:connection open
+	#socket.send(bytes[,flags]),发送数据给套接字
 	s.send(b'GET /index.html HTTP/1.0\r\n')
 	s.send(b'Host:www.python.org\r\n')
 	s.send(b'\r\n')
+	#socket.recv(bufsize[,flags])从套接字接受数据。bufsize指定一次接收的最大数据量，flags一般默认为零
 	resp=b''.join(iter(partial(s.recv,8192),b''))
 	#conn.__exit__() executes:connection closed
 #讨论
