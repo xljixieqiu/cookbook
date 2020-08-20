@@ -158,4 +158,4 @@ class Person:
 		if not isinstance(value, str):
 			raise TypeError('Expected a string')
 		self._last_name = value
-#重复代码会导致臃肿、易出错和丑陋的程序。好消息是，通过使用装饰器或闭包，有很多种更好的方法来完成同样的事情。
+#重复代码会导致臃肿、易出错和丑陋的程序。好消息是，通过使用装饰器或闭包，有很多种更好的方法来完成同样的事情。	
