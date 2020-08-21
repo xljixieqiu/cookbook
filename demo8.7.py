@@ -6,18 +6,23 @@
 class A:
 	def spam(self):
 		print('A.spam')
-class B:
+class B(A):
 	def spam(self):
 		print('B.spam')
 		super().spam()#call parent spam
 #super()函数的一个常见用法是在__init__()方法中确保父类被正确的初始化
+b=B()
+b.spam()#B.spam A.spam
 class C:
 	def __inti__(self):
 		self.x=0
-class D:
+class D(C):
 	def __init__(self):
 		super().__init__()
 		self.y=1
+d=D()
+#print(d.x)
+print(d.y)
 #super()的另外一个常见用法出现在覆盖python特殊方法的代码中，比如：
 class Proxy:
 	def __init__(self,obj):
